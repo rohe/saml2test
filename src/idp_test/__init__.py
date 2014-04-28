@@ -40,6 +40,7 @@ SCHEMA = [dri, idpdisc, md, mdattr, mdui, saml, ui, xmldsig, xmlenc]
 __author__ = 'rolandh'
 
 logger = logging.getLogger("")
+logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 #formatter = logging.Formatter("%(asctime)s %(name)s:%(levelname)s %(message)s")
 formatter_2 = logging.Formatter("%(delta).6f - %(levelname)s - [%(name)s] %(message)s")
@@ -105,7 +106,7 @@ class SAML2client(object):
         self._parser.add_argument('-L', dest='log', action='store_true',
                                   help="Print log information")
         self._parser.add_argument(
-            '-C', dest="§",
+            '-C', dest="cacerts",
             help=("CA certs to use to verify HTTPS server certificates, ",
                   "if HTTPS is used and no server CA certs are defined then ",
                   "no cert verification will be done"))
