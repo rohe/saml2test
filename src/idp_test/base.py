@@ -14,6 +14,18 @@ from saml2.s_utils import rndstr
 
 from saml2test import tool
 from saml2test import FatalError
+from saml2test.interaction import InteractionNeeded
+
+try:
+    from xml.etree import cElementTree as ElementTree
+    if ElementTree.VERSION < '1.3.0':
+        # cElementTree has no support for register_namespace
+        # neither _namespace_map, thus we sacrify performance
+        # for correctness
+        from xml.etree import ElementTree
+except ImportError:
+    import cElementTree as ElementTree
+
 
 __author__ = 'rohe0002'
 
@@ -98,7 +110,7 @@ class Conversation(tool.Conversation):
         except KeyError:
             req = self.qfunc(**self.qargs)
 
-        self.request = self.oper.pre_processing(req, self.args)
+        req_id, self.request = self.oper.pre_processing(req, self.args)
         str_req = "%s" % self.request
 
         if use_artifact:
@@ -234,6 +246,8 @@ class Conversation(tool.Conversation):
                 logger.info("Faulty response: %s" % _resp)
             logger.error("Exception %s" % ferr)
             raise
+        except ElementTree.ParseError:
+            return False
         except Exception, err:
             if _resp:
                 logger.info("Faulty response: %s" % _resp)
