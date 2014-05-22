@@ -19,7 +19,7 @@ Contents:
 
    howto
    install
-   saml2test
+   contents
 
 Indices and tables
 ==================
