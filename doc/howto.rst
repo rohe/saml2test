@@ -11,11 +11,11 @@ If you have not done so yet, read :ref:`install`.
 
 When you want to test a SAML2 entity with this tool you need following things:
 
-#. The Test Driver Configuration, an example can be found in tests/idp_test/config.py
+#. The Test Driver Configuration, an example can be found in tests/idp_test/config.py.example
 #. Attribute Maps mapping URNs, OIDs and friendly names
 #. Key files for the test tool
-#. A metadata file representing the tool
-#. The Test Target Configuration file describes how to interact with the entity to be tested.  The metadata for the entity is part of this file. An example can be found in tests/idp_test/test_target_config.py.
+#. A metadata file representing the tool, don't forget to add this metadata to the IDP you want to test.
+#. The Test Target Configuration file describes how to interact with the entity to be tested. The metadata for the entity is part of this file. An example can be found in tests/idp_test/target_idp.py.
 
 These files should be stored outside the saml2test package to have a clean separation between the package and a particular test configuration. To create a directory for the configuration files copy the saml2test/tests including its contents.
 
@@ -23,9 +23,13 @@ These files should be stored outside the saml2test package to have a clean separ
 (1) Test Driver Configuration
 :::::::::::::::::::::::::::::
 
-This is a normal `PySAML2 configuration file <http://pythonhosted.org/pysaml2/howto/config.html>`_. You can have more than one and then chose which one to use at run time by supplying the test script with an argument. If no configuration is explicitly provided than **tests/ipd_test/config.py** is provided as a default.
+This is a normal `PySAML2 configuration file <http://pythonhosted.org/pysaml2/howto/config.html>`_. You can have more than one and then chose which one to use at run time by supplying the test script with an argument.
 
-This configuration mostly contains the test tool’s metadata structured as a Python dictionary. It doesn't vary a lot between testing different IdPs, except for the value of BASE, and optionally these control options:
+To setup a configuration file:
+
+#. Take the the example file: **[your path]/saml2test/tests/ipd_test/config.py.example**.
+#. Rename it config.py
+#. Edit the necessary information. The most crucial parts is *BASE*, the *key_file* and *cert_file* attributes. Where BASE it the url + port to your test driver,
 
 In addition to the configuration directives documented for the PySAML2 configuration file these may be used:
 
@@ -67,11 +71,10 @@ To change file names, the references in the Tool Configuration need be be change
 
 (4) Test Tool Metadata
 ::::::::::::::::::::::
-The test tool’s metadata is generated from the contents of the Tool Configuration, e.g.:
+The test tool’s metadata is generated from the contents of the Test Driver Configuration, e.g.:
 make_metadata.py config.py > testdrv_metadata.xml
 
 The resulting SAML2 metadata needs to be imported to the test target.
-
 
 (5) Test Target Configuration File
 ::::::::::::::::::::::::::::::::::

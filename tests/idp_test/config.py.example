@@ -45,8 +45,8 @@ CONFIG = {
             }
         }
     },
-    "key_file" : "keys/mykey.pem",
-    "cert_file" : "keys/mycert.pem",
+    "key_file" : "../keys/mykey.pem",
+    "cert_file" : "../keys/mycert.pem",
     "xmlsec_binary" : XMLSEC_BINARY,
     "subject_data": "subject_data.db",
     "accepted_time_diff": 60,
