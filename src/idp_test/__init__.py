@@ -16,7 +16,7 @@ from saml2.config import SPConfig
 from saml2.mdstore import MetadataStore, ToOld
 from saml2.mdstore import MetaData
 
-from saml2test import FatalError, OperationError
+from saml2test import CheckError, FatalError
 from saml2test import exception_trace
 from saml2test import ContextFilter
 
@@ -111,7 +111,7 @@ class SAML2client(object):
                   "if HTTPS is used and no server CA certs are defined then ",
                   "no cert verification will be done"))
         self._parser.add_argument('-J', dest="json_config_file",
-                                  help="Script configuration")
+                                  help="Test target configuration")
         self._parser.add_argument('-m', dest="metadata", action='store_true',
                                   help="Return the SP metadata")
         self._parser.add_argument(
@@ -131,8 +131,11 @@ class SAML2client(object):
                                   help="Tests")
         self._parser.add_argument("-Y", dest="pysamllog", action='store_true',
                                   help="Print PySAML2 logs")
-        self._parser.add_argument("-H", dest="pretty", action='store_true')
-        self._parser.add_argument("-i", dest="insecure", action='store_true')
+        self._parser.add_argument("-H", dest="pretty", action='store_true',
+                                  help="Output summary on stdout as pretty "
+                                       "printed python dict instead of JSON")
+        self._parser.add_argument("-i", dest="insecure", action='store_true',
+                                  help="Do not verify SSL certificate")
         self._parser.add_argument("oper", nargs="?", help="Which test to run")
 
         self.interactions = None
@@ -208,7 +211,7 @@ class SAML2client(object):
         try:
             self.entity_id = _jc["entity_id"]
             # Verify its the correct metadata
-            assert self.entity_id in md.entity.keys()
+            assert self.entity_id in md.entity.keys(), "metadata does not contain entityId %s" % self.entity_id
         except KeyError:
             if len(md.entity.keys()) == 1:
                 self.entity_id = md.entity.keys()[0]
@@ -318,7 +321,7 @@ class SAML2client(object):
             self.test_log = conv.test_output
             tsum = self.test_summation(self.args.oper)
             err = None
-        except OperationError, err:
+        except CheckError, err:
             self.test_log = conv.test_output
             tsum = self.test_summation(self.args.oper)
         except FatalError, err:

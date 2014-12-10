@@ -13,7 +13,7 @@ from saml2.pack import http_redirect_message, http_form_post_message
 from saml2.s_utils import rndstr
 
 from saml2test import tool
-from saml2test import FatalError
+from saml2test import CheckError, FatalError
 from saml2test.interaction import InteractionNeeded
 
 try:
@@ -84,7 +84,7 @@ class Conversation(tool.Conversation):
         self.position = ""
         self.response = None
         self.oper = None
-        self.idp_constraints = constraints
+        self.msg_constraints = constraints
 
     def send(self):
         srvs = getattr(self.client.metadata, REQ2SRV[self.oper.request])(
@@ -248,6 +248,8 @@ class Conversation(tool.Conversation):
             raise
         except ElementTree.ParseError:
             return False
+        except CheckError:
+            raise
         except Exception, err:
             if _resp:
                 logger.info("Faulty response: %s" % _resp)
