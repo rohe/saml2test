@@ -25,7 +25,10 @@ info = {
     "args":
         {
             "AuthnResponse": {
-                "sign_assertion": True,
+                "sign_assertion": "always", # always, never
+                "sign_response": "never", # always, never
+                "sign_digest_alg": ds.DIGEST_SHA256,
+                "sign_signature_alg": ds.SIG_RSA_SHA256,
                 "authn": AUTHN
             }
         },
@@ -37,7 +40,36 @@ info = {
     },
     # This is the value of the NameID that is return in the Subject in the
     # Assertion
-    "userid": "roland"
+    "userid": "roland",
+    # regex pattern that must be contained in the resulting echo page to validate
+    # that the SP returned the right page after Login.
+    "echopageIdPattern": r"<title>SAML Echo Service</title>",
+    # list of regex patterns that must be contained in the resulting echo page to validate
+    # that the SP's echo page returns expected SAMLe response values (e.g. attribute values)
+    "echopageContentPattern": [r"Given Name\s*</td>\s*<td>Roland</td>",
+                               r"Userid\s*</td>\s*<td>roalnd</td>",
+                               r"Surname\s*</td>\s*<td>Hedberg</td>",
+                              ],
+    "constraints": {
+        "authnRequest_signature_required": True,
+        # allowed for assertion & response signature:
+        "signature_algorithm": [
+            #ds.SIG_RSA_SHA1,  # you may need this for legacy deployments
+            ds.SIG_RSA_SHA224,
+            ds.SIG_RSA_SHA256,
+            ds.SIG_RSA_SHA384,
+            ds.SIG_RSA_SHA512,
+        ],
+        "digest_algorithm": [
+            #ds.DIGEST_SHA1,   # you may need this for legacy deployments
+            ds.DIGEST_SHA1,
+            ds.DIGEST_SHA224,
+            ds.DIGEST_SHA256,
+            ds.DIGEST_SHA384,
+            ds.DIGEST_SHA512,
+            ds.DIGEST_RIPEMD160,
+        ],
+    },
 }
 
 print json.dumps(info)

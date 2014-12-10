@@ -5,7 +5,7 @@ import logging
 from urlparse import parse_qs
 
 from saml2test.opfunc import Operation
-from saml2test import FatalError
+from saml2test import CheckError, FatalError
 from saml2test.check import ExpectedError, ERROR
 from saml2test.interaction import Interaction
 from saml2test.interaction import Action
@@ -62,7 +62,7 @@ class Conversation(object):
             except KeyError:
                 pass
 
-            raise FatalError
+            raise CheckError
 
     def do_check(self, test, **kwargs):
         if isinstance(test, basestring):

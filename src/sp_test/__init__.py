@@ -1,7 +1,9 @@
 import json
 import pprint
 import argparse
+import os.path
 import sys
+import traceback
 from importlib import import_module
 
 from idp_test import SCHEMA
@@ -19,6 +21,7 @@ from saml2test import FatalError
 from saml2test import CheckError
 from saml2test import ContextFilter
 from saml2test import exception_trace
+from saml2test.check import CRITICAL
 
 __author__ = 'rolandh'
 
@@ -57,13 +60,24 @@ class Client(object):
                   "no cert verification will be done"))
         self._parser.add_argument('-d', dest='debug', action='store_true',
                                   help="Print debug information")
-        self._parser.add_argument("-H", dest="pretty", action='store_true')
-        self._parser.add_argument("-i", dest="insecure", action='store_true')
+        self._parser.add_argument("-H", dest="pretty", action='store_true',
+                                  help="Output summary on stdout as pretty "
+                                       "printed python dict instead of JSON")
+        self._parser.add_argument("-i", dest="insecure", action='store_true',
+                                  help="Do not verify SSL certificate")
+        self._parser.add_argument("-I", dest="keysdir", default="keys",
+                                  help="Directory for invalid IDP keys")
         self._parser.add_argument('-J', dest="json_config_file",
-                                  help="Script configuration")
+                                  help="Test target configuration")
+        self._parser.add_argument(
+            '-k', dest='content_log', action='store_true',
+            help="Log HTTP content in spearate files in directory "
+                 "<operation>/, which defaults to the path in -L")
         self._parser.add_argument(
             "-l", dest="list", action="store_true",
             help="List all the test flows as a JSON object")
+        self._parser.add_argument("-L", dest="logpath", default=".",
+                                  help="Path to the logfile directory")
         self._parser.add_argument('-m', dest="metadata", action='store_true',
                                   help="Return the IdP metadata")
         self._parser.add_argument(
@@ -71,8 +85,8 @@ class Client(object):
             help="Path to the configuration file for the IdP")
         self._parser.add_argument("-t", dest="testpackage",
                                   help="Module describing tests")
-        self._parser.add_argument('-v', dest='verbose', action='store_true',
-                                  help="Print runtime information")
+        #self._parser.add_argument('-v', dest='verbose', action='store_true',
+        #                          help="Print runtime information") # unsused
         self._parser.add_argument("-Y", dest="pysamllog", action='store_true',
                                   help="Print PySAML2 logs")
         self._parser.add_argument("oper", nargs="?", help="Which test to run")
@@ -102,6 +116,15 @@ class Client(object):
                 self.idp_config.ca_certs = self.args.ca_certs
             else:
                 self.idp_config.ca_certs = "../keys/cacert.pem"
+        # hack to change idp cert without config change. TODO: find interface to
+        # change IDP cert after __init__
+        if self.args.oper == 'sp-04':
+            self.idp_config.cert_file = os.path.join(self.args.keysdir, "non_md_cert.pem")
+            self.idp_config.key_file = os.path.join(self.args.keysdir, "non_md_key.pem")
+            for f in [self.idp_config.cert_file, self.idp_config.key_file]:
+                if not os.path.isfile(f):
+                    print "File not found: %s" % os.path.abspath(f)
+                    raise
 
         self.idp = Server(config=self.idp_config)
 
@@ -164,13 +187,11 @@ class Client(object):
                 try:
                     oper = self.tests.OPERATIONS[self.args.oper]
                 except ValueError:
-                    print >> sys.stderr, "Undefined testcase"
+                    print >> sys.stderr, "Undefined testcase " + self.args.oper
                     return
             else:
-                print >> sys.stderr, "Undefined testcase"
+                print >> sys.stderr, "Undefined testcase " + self.args.oper
                 return
-
-        opers = oper["sequence"]
 
         if self.args.pretty:
             pp = pprint.PrettyPrinter(indent=4)
@@ -182,9 +203,10 @@ class Client(object):
                             self.interactions, self.json_config,
                             check_factory=self.check_factory,
                             entity_id=self.entity_id,
-                            constraints=self.constraints)
+                            constraints=self.constraints,
+                            commandlineargs = self.args)
         try:
-            conv.do_sequence(opers, oper["tests"])
+            conv.do_sequence_and_tests(oper["sequence"], oper["tests"])
             self.test_log = conv.test_output
             tsum = self.test_summation(self.args.oper)
             err = None
@@ -200,11 +222,17 @@ class Client(object):
             tsum = self.test_summation(self.args.oper)
         except Exception, err:
             if conv:
+                conv.test_output.append({"status": CRITICAL,
+                         "name": "test driver error",
+                         "id": "critial exception"})
                 self.test_log = conv.test_output
                 self.test_log.append(exception_trace("RUN", err))
             else:
                 self.test_log = exception_trace("RUN", err)
             tsum = self.test_summation(self.args.oper)
+            logger.error("Unexpected exception in test driver %s" %
+                         traceback.format_exception(*sys.exc_info()))
+
 
         if pp:
             pp.pprint(tsum)
